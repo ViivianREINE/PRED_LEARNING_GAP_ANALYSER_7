@@ -1,0 +1,530 @@
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, BarChart, Bar, ScatterChart, Scatter, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, Area, AreaChart } from 'recharts';
+import { User, Lock, TrendingUp, AlertTriangle, CheckCircle, Download, MessageCircle, Users, Award, Target, BookOpen, Brain } from 'lucide-react';
+
+export default function StudentDashboard() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [students, setStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+
+  // Generate realistic student data
+  useEffect(() => {
+    const generateStudents = () => {
+      const names = ['Arjun Kumar', 'Priya Sharma', 'Rahul Verma', 'Sneha Patel', 'Vikram Singh', 
+                     'Ananya Reddy', 'Karthik Rao', 'Divya Menon', 'Aditya Gupta', 'Meera Iyer',
+                     'Rohan Das', 'Kavya Nair', 'Siddharth Joshi', 'Riya Kapoor', 'Nikhil Mehta'];
+      
+      return names.map((name, i) => {
+        const cie1 = Math.floor(Math.random() * 40 + 10);
+        const cie2 = Math.floor(Math.random() * 40 + 10);
+        const avgCIE = (cie1 + cie2) / 2;
+        
+        // Prediction logic with some variance
+        const baseSEE = avgCIE * 1.8 + Math.random() * 20 - 10;
+        const predictedSEE = Math.max(10, Math.min(100, baseSEE));
+        
+        const totalPredicted = avgCIE + predictedSEE;
+        const riskLevel = totalPredicted < 40 ? 'High' : totalPredicted < 60 ? 'Medium' : 'Low';
+        
+        return {
+          id: i + 1,
+          name,
+          cie1,
+          cie2,
+          avgCIE: parseFloat(avgCIE.toFixed(2)),
+          predictedSEE: parseFloat(predictedSEE.toFixed(2)),
+          totalPredicted: parseFloat(totalPredicted.toFixed(2)),
+          riskLevel,
+          attendance: Math.floor(Math.random() * 30 + 70),
+          assignments: Math.floor(Math.random() * 20 + 80)
+        };
+      });
+    };
+    
+    setStudents(generateStudents());
+  }, []);
+
+  const handleLogin = () => {
+    if (username === 'teacher' && password === 'dashboard123') {
+      setIsLoggedIn(true);
+    } else {
+      alert('Invalid credentials! Use username: teacher, password: dashboard123');
+    }
+  };
+
+  const getRiskColor = (risk) => {
+    switch(risk) {
+      case 'High': return '#ef4444';
+      case 'Medium': return '#f59e0b';
+      case 'Low': return '#10b981';
+      default: return '#6b7280';
+    }
+  };
+
+  const downloadReport = () => {
+    const reportData = students.map(s => 
+      `${s.name},${s.cie1},${s.cie2},${s.avgCIE},${s.predictedSEE},${s.totalPredicted},${s.riskLevel}`
+    ).join('\n');
+    
+    const blob = new Blob([`Name,CIE1,CIE2,Avg CIE,Predicted SEE,Total,Risk\n${reportData}`], 
+                          { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'student_report.csv';
+    a.click();
+  };
+
+  const handleChat = () => {
+    if (!chatInput.trim()) return;
+    
+    const responses = [
+      "Based on the data, students with CIE average below 20 need immediate intervention.",
+      "Focus on students in the 'High Risk' category for one-on-one mentoring.",
+      "The trend shows improvement in CIE2 compared to CIE1 for most students.",
+      "Consider additional practice sessions for students predicted to score below 40 in SEE.",
+      "Strong correlation observed between attendance and predicted SEE scores."
+    ];
+    
+    setChatMessages([...chatMessages, 
+      { type: 'user', text: chatInput },
+      { type: 'bot', text: responses[Math.floor(Math.random() * responses.length)] }
+    ]);
+    setChatInput('');
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      if (!isLoggedIn) {
+        handleLogin();
+      } else {
+        handleChat();
+      }
+    }
+  };
+
+  // Analytics data
+  const riskDistribution = [
+    { name: 'Low Risk', value: students.filter(s => s.riskLevel === 'Low').length, color: '#10b981' },
+    { name: 'Medium Risk', value: students.filter(s => s.riskLevel === 'Medium').length, color: '#f59e0b' },
+    { name: 'High Risk', value: students.filter(s => s.riskLevel === 'High').length, color: '#ef4444' }
+  ];
+
+  const performanceTrend = students.map(s => ({
+    name: s.name.split(' ')[0],
+    CIE1: s.cie1,
+    CIE2: s.cie2,
+    'Predicted SEE': s.predictedSEE
+  }));
+
+  const cohortAnalysis = students.map(s => ({
+    subject: s.name.split(' ')[0],
+    CIE: s.avgCIE,
+    SEE: s.predictedSEE,
+    fullMark: 100
+  }));
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob top-0 -left-4"></div>
+          <div className="absolute w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 top-0 -right-4"></div>
+          <div className="absolute w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000 bottom-0 left-20"></div>
+        </div>
+
+        <div className="relative z-10 bg-white bg-opacity-10 backdrop-blur-xl rounded-3xl shadow-2xl p-12 w-full max-w-md border border-white border-opacity-20">
+          <div className="text-center mb-8">
+            <div className="inline-block p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mb-4">
+              <Brain className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-2">EduPredict AI</h1>
+            <p className="text-indigo-200">Teacher Analytics Dashboard</p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">Username</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 w-5 h-5" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-full pl-12 pr-4 py-3 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-xl text-white placeholder-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                  placeholder="Enter username"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 w-5 h-5" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-full pl-12 pr-4 py-3 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-xl text-white placeholder-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                  placeholder="Enter password"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogin}
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transform hover:scale-105 transition shadow-lg"
+            >
+              Sign In
+            </button>
+          </div>
+
+          <p className="text-center text-indigo-200 text-sm mt-6">
+            Demo: teacher / dashboard123
+          </p>
+        </div>
+
+        <style>{`
+          @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(20px, -50px) scale(1.1); }
+            50% { transform: translate(-20px, 20px) scale(0.9); }
+            75% { transform: translate(50px, 50px) scale(1.05); }
+          }
+          .animate-blob { animation: blob 7s infinite; }
+          .animation-delay-2000 { animation-delay: 2s; }
+          .animation-delay-4000 { animation-delay: 4s; }
+        `}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-2xl">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Brain className="w-10 h-10" />
+            <div>
+              <h1 className="text-3xl font-bold">EduPredict AI Dashboard</h1>
+              <p className="text-indigo-200">Predictive Analytics & Risk Assessment</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsLoggedIn(false)}
+            className="px-6 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition"
+          >
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition">
+            <Users className="w-8 h-8 mb-2 opacity-80" />
+            <div className="text-3xl font-bold">{students.length}</div>
+            <div className="text-blue-100">Total Students</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition">
+            <CheckCircle className="w-8 h-8 mb-2 opacity-80" />
+            <div className="text-3xl font-bold">{students.filter(s => s.riskLevel === 'Low').length}</div>
+            <div className="text-green-100">Low Risk</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition">
+            <AlertTriangle className="w-8 h-8 mb-2 opacity-80" />
+            <div className="text-3xl font-bold">{students.filter(s => s.riskLevel === 'Medium').length}</div>
+            <div className="text-yellow-100">Medium Risk</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition">
+            <Target className="w-8 h-8 mb-2 opacity-80" />
+            <div className="text-3xl font-bold">{students.filter(s => s.riskLevel === 'High').length}</div>
+            <div className="text-red-100">High Risk</div>
+          </div>
+        </div>
+
+        {/* Charts Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Risk Heatmap */}
+          <div className="bg-white bg-opacity-10 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white border-opacity-20">
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+              <AlertTriangle className="mr-2" />
+              Risk Distribution
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={riskDistribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                <XAxis dataKey="name" stroke="#fff" />
+                <YAxis stroke="#fff" />
+                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {riskDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Performance Trend */}
+          <div className="bg-white bg-opacity-10 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white border-opacity-20">
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+              <TrendingUp className="mr-2" />
+              CIE Progress Trend
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={performanceTrend.slice(0, 10)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                <XAxis dataKey="name" stroke="#fff" />
+                <YAxis stroke="#fff" />
+                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                <Legend />
+                <Area type="monotone" dataKey="CIE1" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+                <Area type="monotone" dataKey="CIE2" stackId="2" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.6} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Charts Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Cohort Analysis */}
+          <div className="bg-white bg-opacity-10 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white border-opacity-20">
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+              <Award className="mr-2" />
+              SEE Prediction Analysis
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={performanceTrend.slice(0, 10)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                <XAxis dataKey="name" stroke="#fff" />
+                <YAxis stroke="#fff" />
+                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                <Legend />
+                <Line type="monotone" dataKey="CIE1" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b', r: 4 }} />
+                <Line type="monotone" dataKey="CIE2" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
+                <Line type="monotone" dataKey="Predicted SEE" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Radar Chart */}
+          <div className="bg-white bg-opacity-10 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white border-opacity-20">
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+              <BookOpen className="mr-2" />
+              Performance Radar
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={cohortAnalysis.slice(0, 6)}>
+                <PolarGrid stroke="#ffffff40" />
+                <PolarAngleAxis dataKey="subject" stroke="#fff" />
+                <PolarRadiusAxis stroke="#fff" />
+                <Radar name="CIE Average" dataKey="CIE" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+                <Radar name="Predicted SEE" dataKey="SEE" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.6} />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Student Table */}
+        <div className="bg-white bg-opacity-10 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white border-opacity-20 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-white">Student Performance Table</h2>
+            <button
+              onClick={downloadReport}
+              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+            >
+              <Download className="w-5 h-5" />
+              <span>Download Report</span>
+            </button>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-white">
+              <thead>
+                <tr className="border-b border-white border-opacity-20">
+                  <th className="text-left p-3">Student Name</th>
+                  <th className="text-center p-3">CIE 1</th>
+                  <th className="text-center p-3">CIE 2</th>
+                  <th className="text-center p-3">Avg CIE</th>
+                  <th className="text-center p-3">Predicted SEE</th>
+                  <th className="text-center p-3">Total</th>
+                  <th className="text-center p-3">Risk Level</th>
+                  <th className="text-center p-3">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map((student) => (
+                  <tr key={student.id} className="border-b border-white border-opacity-10 hover:bg-white hover:bg-opacity-5 transition">
+                    <td className="p-3">{student.name}</td>
+                    <td className="text-center p-3">{student.cie1}</td>
+                    <td className="text-center p-3">{student.cie2}</td>
+                    <td className="text-center p-3 font-semibold">{student.avgCIE}</td>
+                    <td className="text-center p-3 font-bold text-yellow-400">{student.predictedSEE}</td>
+                    <td className="text-center p-3 font-bold">{student.totalPredicted}</td>
+                    <td className="text-center p-3">
+                      <span 
+                        className="px-3 py-1 rounded-full text-xs font-semibold"
+                        style={{ backgroundColor: getRiskColor(student.riskLevel) + '40', color: getRiskColor(student.riskLevel) }}
+                      >
+                        {student.riskLevel}
+                      </span>
+                    </td>
+                    <td className="text-center p-3">
+                      <button
+                        onClick={() => setSelectedStudent(student)}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-xs transition"
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* AI Chatbot */}
+        <button
+          onClick={() => setShowChat(!showChat)}
+          className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition transform"
+        >
+          <MessageCircle className="w-8 h-8 text-white" />
+        </button>
+
+        {showChat && (
+          <div className="fixed bottom-24 right-6 w-96 bg-white bg-opacity-10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white border-opacity-20 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white font-semibold">
+              AI Teaching Assistant
+            </div>
+            <div className="h-64 overflow-y-auto p-4 space-y-3">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`px-4 py-2 rounded-lg max-w-xs ${msg.type === 'user' ? 'bg-indigo-600 text-white' : 'bg-white bg-opacity-20 text-white'}`}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-white border-opacity-20">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask for insights..."
+                  className="flex-1 px-3 py-2 bg-white bg-opacity-20 rounded-lg text-white placeholder-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                <button
+                  onClick={handleChat}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Student Detail Modal */}
+        {selectedStudent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-2xl w-full shadow-2xl border border-white border-opacity-20">
+              <h2 className="text-3xl font-bold text-white mb-6">{selectedStudent.name}</h2>
+              
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                  <div className="text-indigo-300 text-sm">CIE 1</div>
+                  <div className="text-3xl font-bold text-white">{selectedStudent.cie1}</div>
+                </div>
+                <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                  <div className="text-indigo-300 text-sm">CIE 2</div>
+                  <div className="text-3xl font-bold text-white">{selectedStudent.cie2}</div>
+                </div>
+                <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                  <div className="text-indigo-300 text-sm">Average CIE</div>
+                  <div className="text-3xl font-bold text-white">{selectedStudent.avgCIE}</div>
+                </div>
+                <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                  <div className="text-yellow-300 text-sm">Predicted SEE</div>
+                  <div className="text-3xl font-bold text-yellow-400">{selectedStudent.predictedSEE}</div>
+                </div>
+                <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                  <div className="text-indigo-300 text-sm">Attendance</div>
+                  <div className="text-3xl font-bold text-white">{selectedStudent.attendance}%</div>
+                </div>
+                <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                  <div className="text-indigo-300 text-sm">Assignments</div>
+                  <div className="text-3xl font-bold text-white">{selectedStudent.assignments}%</div>
+                </div>
+              </div>
+
+              <div className="bg-white bg-opacity-10 rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-semibold">Risk Assessment:</span>
+                  <span 
+                    className="px-4 py-2 rounded-full font-bold"
+                    style={{ backgroundColor: getRiskColor(selectedStudent.riskLevel), color: 'white' }}
+                  >
+                    {selectedStudent.riskLevel} Risk
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-indigo-600 bg-opacity-20 border border-indigo-500 rounded-xl p-4 mb-6">
+                <h3 className="text-white font-semibold mb-2">📋 Intervention Plan:</h3>
+                <ul className="text-indigo-200 space-y-1 text-sm">
+                  {selectedStudent.riskLevel === 'High' && (
+                    <>
+                      <li>• Schedule immediate one-on-one mentoring session</li>
+                      <li>• Provide additional study materials and resources</li>
+                      <li>• Monitor attendance and assignment submission closely</li>
+                      <li>• Consider peer tutoring arrangement</li>
+                    </>
+                  )}
+                  {selectedStudent.riskLevel === 'Medium' && (
+                    <>
+                      <li>• Conduct weekly progress check-ins</li>
+                      <li>• Recommend practice problem sets</li>
+                      <li>• Encourage participation in study groups</li>
+                    </>
+                  )}
+                  {selectedStudent.riskLevel === 'Low' && (
+                    <>
+                      <li>• Continue current study approach</li>
+                      <li>• Consider advanced enrichment materials</li>
+                      <li>• Encourage peer mentoring opportunities</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+
+              <button
+                onClick={() => setSelectedStudent(null)}
+                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
